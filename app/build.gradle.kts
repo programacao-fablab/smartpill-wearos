@@ -50,7 +50,7 @@ android {
 }
 dependencies {
     // --- BASE DO ANDROID E KOTLIN ---
-    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     implementation("androidx.activity:activity-compose:1.9.0")
     // Necessário para 'multiDexEnabled = true'
@@ -100,5 +100,5 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
 
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 }
