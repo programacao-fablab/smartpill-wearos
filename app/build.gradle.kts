@@ -1,7 +1,16 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+val localProperties = Properties() // Sem "java."
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile)) // Sem "java."
 }
 android {
     namespace = "com.smartpillwearos"
@@ -14,6 +23,12 @@ android {
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
+
+        val supabaseUrl = localProperties.getProperty("SUPABASE_URL") ?: ""
+        val supabaseKey = localProperties.getProperty("SUPABASE_KEY") ?: ""
+
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
     }
 
     buildTypes {
@@ -28,6 +43,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -53,52 +69,36 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     implementation("androidx.activity:activity-compose:1.9.0")
-    // Necessário para 'multiDexEnabled = true'
     implementation("androidx.multidex:multidex:2.0.1")
 
     // --- INTERFACE (COMPOSE PARA WEAR OS) ---
-    // Componentes principais de UI (botões, listas, etc)
     implementation("androidx.wear.compose:compose-material:1.3.1")
-    // Fundação do Compose (colunas, linhas, etc)
     implementation("androidx.wear.compose:compose-foundation:1.3.1")
-    // Navegação entre telas no Wear OS
     implementation("androidx.wear.compose:compose-navigation:1.3.1")
-    // Ferramentas para pré-visualização no Android Studio
     debugImplementation("androidx.compose.ui:ui-tooling-preview:1.6.8")
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.8")
-
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
-    // --- COMUNICAÇÃO (CELULAR <-> RELÓGIO) ---
-    // A Data Layer API (MessageClient, etc.)
+
+    // --- COMUNICAÇÃO ---
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
 
-    // --- BIBLIOTECA DO SUPABASE (RECOMENDADO) ---
-    // Cliente principal do Supabase (use a versão mais recente)
-
-
-
-//    implementation(platform("io.github.jan-tennert.supabase:bom:3.2.6"))
-//    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-//    implementation("io.github.jan-tennert.supabase:auth-kt")
-//    implementation("io.github.jan-tennert.supabase:realtime-kt")
-
-    // --- SUPABASE (Versão 2.6.1) ---
+// --- SUPABASE VERSÃO 2.6.1 (Estável para Kotlin 1.9) ---
     val supabaseVersion = "2.6.1"
+    val ktorVersion = "2.3.12" // Versão compatível com Kotlin 1.9
 
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:${supabaseVersion}")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:${supabaseVersion}")
-    implementation("io.github.jan-tennert.supabase:functions-kt:${supabaseVersion}")
-    implementation("io.github.jan-tennert.supabase:realtime-kt:${supabaseVersion}")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt:$supabaseVersion")   // Auth
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:$supabaseVersion") // Banco
+    implementation("io.github.jan-tennert.supabase:realtime-kt:$supabaseVersion")  // Realtime
+    implementation("io.github.jan-tennert.supabase:functions-kt:$supabaseVersion") // Functions
 
-    // O motor Ktor (necessário para a rede)
-    implementation("io.ktor:ktor-client-cio:2.3.12")
+    // --- MOTOR DE REDE (KTOR) ---
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
 
-
-    // --- GERAÇÃO DO QR CODE ---
-    // Biblioteca principal para gerar o QR Code a partir do token
-    implementation("com.google.zxing:core:3.5.3")
-
-
+    // --- SERIALIZAÇÃO (Versão 1.6.3 funciona no Kotlin 1.9) ---
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // --- QR CODE ---
+    implementation("com.google.zxing:core:3.5.3")
 }
