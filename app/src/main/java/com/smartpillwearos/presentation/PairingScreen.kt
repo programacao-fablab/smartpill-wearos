@@ -1,7 +1,5 @@
 package com.smartpillwearos.presentation
 
-import android.graphics.Bitmap
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,16 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,164 +21,93 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.smartpillwearos.presentation.utils.DeviceUtils
+import com.smartpillwearos.domain.AuthState
 import com.smartpillwearos.presentation.utils.QRCodeUtils
-
-// --- IMPORTS CORRIGIDOS ---
-// Importa a sua variável global do outro arquivo
-import com.smartpillwearos.presentation.supabaseClient
-
-import io.github.jan.supabase.functions.functions
-import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.realtime.realtime // Acesso ao Realtime via .realtime
-import io.github.jan.supabase.realtime.RealtimeChannel
-import io.github.jan.supabase.realtime.broadcastFlow
-import io.github.jan.supabase.realtime.channel
-
-// Imports de Serialização (Essenciais para corrigir o erro de 'null')
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.coroutines.launch
-import io.ktor.client.statement.bodyAsText
-
-@Serializable
-data class TokenResponse(val token: String)
 
 @Composable
 fun PairingScreen(
-    onPairingSuccess: () -> Unit
+    onAuthenticationSuccess: () -> Unit,
+    vm: PairingViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+    val authState by vm.authState.collectAsState()
 
-    // CORREÇÃO 1: Usamos a variável global 'supabaseClient' que você definiu
-    val supabase = remember { supabaseClient }
-
-    var qrCodeBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var pairingToken by remember { mutableStateOf<String?>(null) }
-    var deviceId by remember { mutableStateOf<String?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var statusMessage by remember { mutableStateOf("Gerando código...") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // 1. Gerar Código (Edge Function)
+    // Dispara o fluxo apenas uma vez quando a tela entra no estado Idle
     LaunchedEffect(Unit) {
-        try {
-            val id = DeviceUtils.getDeviceId(context)
-            deviceId = id
-            val response = supabase.functions.invoke("create-pairing-token", mapOf("deviceId" to id))
-            val jsonString = response.bodyAsText()
-            val data = Json.decodeFromString<TokenResponse>(jsonString)
+        vm.startPairing(context)
+    }
 
-            pairingToken = data.token
-            qrCodeBitmap = QRCodeUtils.generateQRCode(deviceId.toString())
-            statusMessage = "Aguardando celular..."
-            isLoading = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-            errorMessage = "Erro: ${e.message}"
-            isLoading = false
+    // Reage ao estado Success navegando para a Home e destruindo esta tela
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Success) {
+            onAuthenticationSuccess()
         }
     }
 
-    // 2. Realtime (Ouvir o Login)
-    if (deviceId != null) {
-        DisposableEffect(deviceId) {
-            var channel: RealtimeChannel? = null
-
-            try {
-
-                channel = supabase.realtime.channel("auth-device:$deviceId")
-                Log.d("LOGSS", " Ouvindo o canal: $deviceId")
-                Log.d("LOGSS", " Ouvindo o canal: auth-device:$deviceId")
-
-                scope.launch {
-                    channel.status.collect { status ->
-                        Log.d("SmartPillDebug", ">>> STATUS DO CANAL: $status")
-                        // Se ficar só em 'CONNECTING' e nunca 'SUBSCRIBED', é problema de internet no relógio
-                    }
-                }
-
-                scope.launch {
-
-                    channel
-                        .broadcastFlow<JsonObject>("login-token")
-                        .collect { payload ->
-                            Log.d("LOGSS", "Mensagem recebida no canal")
-
-                            try {
-
-                                Log.d("SmartPillDebug", "Entrou aqui")
-
-                                val refreshToken =
-                                    payload["refresh_token"]
-                                        ?.jsonPrimitive
-                                        ?.contentOrNull
-
-                                if (refreshToken != null) {
-                                    Log.d("SmartPillDebug", "Entrou acola")
-
-                                    statusMessage = "Autenticando..."
-                                    isLoading = true
-
-                                    supabase.auth.refreshSession(
-                                        refreshToken = refreshToken
-                                    )
-
-                                    onPairingSuccess()
-                                }
-
-                            } catch (e: Exception) {
-                                Log.d("LOGSS", " AAAAAAAAAAAAA ${e.message}")
-
-                                Log.e("Auth", "Erro no login: ${e.message}")
-                            }
-                        }
-                }
-
-                scope.launch {
-                    channel.subscribe()
-                }
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.d("LOGSS", "BBBBBBBBBBB ${e.message}")
-
-                errorMessage = "Erro Realtime: ${e.message}"
-            }
-
-            onDispose {
-                scope.launch {
-                    channel?.unsubscribe()
-                }
-            }
-        }
-}
-
-    // UI (Mantém igual)
     Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        if (isLoading) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(statusMessage, fontSize = 12.sp)
+        when (val state = authState) {
+            is AuthState.Idle, is AuthState.GeneratingQR, is AuthState.Authenticating -> {
+                val label = when (state) {
+                    is AuthState.GeneratingQR -> "Gerando código..."
+                    is AuthState.Authenticating -> "Autenticando..."
+                    else -> "Aguarde..."
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(label, fontSize = 12.sp, color = Color.White)
+                }
             }
-        } else if (errorMessage != null) {
-            Text(errorMessage!!, color = Color.Red, textAlign = TextAlign.Center)
-        } else if (qrCodeBitmap != null) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Escaneie no App", fontSize = 12.sp, color = Color.White)
-                Image(qrCodeBitmap!!.asImageBitmap(), "QR", Modifier.size(120.dp))
-                Text(pairingToken ?: "", fontSize = 14.sp, color = MaterialTheme.colors.primary)
+
+            is AuthState.WaitingForMobileScan -> {
+                val qrBitmap = remember(state.qrToken) {
+                    QRCodeUtils.generateQRCode(state.qrToken)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Escaneie no App", fontSize = 12.sp, color = Color.White)
+                    qrBitmap?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "QR Code",
+                            modifier = Modifier.size(120.dp)
+                        )
+                    }
+                    Text(
+                        text = state.qrToken,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colors.primary
+                    )
+                }
+            }
+
+            is AuthState.Success -> {
+                // LaunchedEffect acima cuida da navegação — UI permanece vazia enquanto transita
+                Box {}
+            }
+
+            is AuthState.Error -> {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = state.message,
+                        color = Color.Red,
+                        textAlign = TextAlign.Center,
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { vm.retry(context) }) {
+                        Text("Tentar Novamente", fontSize = 10.sp)
+                    }
+                }
             }
         }
     }

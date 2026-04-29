@@ -8,6 +8,7 @@ import io.github.jan.supabase.realtime.broadcastFlow
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.realtime
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,11 +22,27 @@ import kotlinx.serialization.json.jsonPrimitive
 @Serializable
 private data class TokenResponse(val token: String)
 
-class SupabaseAuthManager(private val supabase: SupabaseClient) {
+class SupabaseAuthManager(private val supabase: SupabaseClient? = null) {
     private val _state = MutableStateFlow<AuthState>(AuthState.Idle)
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
-    suspend fun generatePairingToken(deviceId: String) {
+    suspend fun startPairingFlow(deviceId: String = "dummy_device", mockedTokens: Boolean = false) {
+        if (mockedTokens) {
+            _state.value = AuthState.GeneratingQR
+            delay(50)
+            _state.value = AuthState.WaitingForMobileScan("mock_qr_token_123")
+            delay(50)
+            _state.value = AuthState.Authenticating
+            delay(50)
+            _state.value = AuthState.Success("mocked_user_id_999")
+            return
+        }
+
+        generatePairingToken(deviceId)
+    }
+
+    private suspend fun generatePairingToken(deviceId: String) {
+        if (supabase == null) return
         _state.value = AuthState.GeneratingQR
         try {
             val response = supabase.functions.invoke("create-pairing-token", mapOf("deviceId" to deviceId))
@@ -33,14 +50,14 @@ class SupabaseAuthManager(private val supabase: SupabaseClient) {
             val data = Json.decodeFromString<TokenResponse>(jsonString)
             _state.value = AuthState.WaitingForMobileScan(qrToken = data.token)
             
-            // Automatically start listening for approval
             listenForMobileApproval(deviceId)
         } catch (e: Exception) {
             _state.value = AuthState.Error(e.message ?: "Erro ao gerar token")
         }
     }
 
-    suspend fun listenForMobileApproval(deviceId: String) {
+    private suspend fun listenForMobileApproval(deviceId: String) {
+        if (supabase == null) return
         try {
             val channel = supabase.realtime.channel("auth-device:$deviceId")
             channel.subscribe()

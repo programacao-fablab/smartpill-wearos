@@ -1,4 +1,4 @@
-package com.smartpillwearos.presentation
+package com.smartpillwearos.services
 
 import com.smartpillwearos.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
