@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,11 @@ val DarkText = Color(0xFF333333)
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainClockScreen(clock: Clock = Clock.systemDefaultZone()) {
+fun MainClockScreen(
+    clock: Clock = Clock.systemDefaultZone(),
+    userName: String = "Usuário",
+    onLogout: () -> Unit = {}
+) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     var currentTime by remember { mutableStateOf(LocalTime.now(clock)) }
 
@@ -68,9 +73,9 @@ fun MainClockScreen(clock: Clock = Clock.systemDefaultZone()) {
             modifier = Modifier.fillMaxSize()
         ) { page ->
             when (page) {
-                0 -> PageInicio(timeString)
+                0 -> PageInicio(timeString, userName)
                 1 -> PageMeio()
-                2 -> PageFim()
+                2 -> PageFim(onLogout)
             }
         }
 
@@ -96,7 +101,7 @@ fun MainClockScreen(clock: Clock = Clock.systemDefaultZone()) {
 }
 
 @Composable
-fun PageInicio(timeString: String) {
+fun PageInicio(timeString: String, userName: String = "Usuário") {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -118,7 +123,7 @@ fun PageInicio(timeString: String) {
                 Text("R", color = DarkText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Roger", color = DarkText, fontSize = 14.sp)
+            Text(text = userName, color = DarkText, fontSize = 14.sp, modifier = Modifier.testTag("userName"))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -167,7 +172,7 @@ fun PageMeio() {
 }
 
 @Composable
-fun PageFim() {
+fun PageFim(onLogout: () -> Unit = {}) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -225,7 +230,7 @@ fun PageFim() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Button(
-                    onClick = { /* Sem lógica */ },
+                    onClick = onLogout,
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Lavender,
                         contentColor = DarkText

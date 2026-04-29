@@ -93,4 +93,26 @@ class SupabaseAuthManager(private val supabase: SupabaseClient? = null) {
             _state.value = AuthState.Error("Erro no servidor de tempo real: ${e.message}")
         }
     }
+    suspend fun logout() {
+        if (supabase == null) return
+        try {
+            supabase.auth.signOut()
+        } finally {
+            _state.value = AuthState.Idle
+        }
+    }
+
+    suspend fun getUserProfile(): String {
+        if (supabase == null) return "Usuário"
+        return try {
+            supabase.auth.currentUserOrNull()
+                ?.userMetadata
+                ?.get("full_name")
+                ?.toString()
+                ?.trim('"')
+                ?: "Usuário"
+        } catch (e: Exception) {
+            "Usuário"
+        }
+    }
 }

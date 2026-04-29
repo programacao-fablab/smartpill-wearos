@@ -1,18 +1,30 @@
 package com.smartpillwearos.presentation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.smartpillwearos.ui.MainClockScreen
+import com.smartpillwearos.ui.MainViewModel
 
 @Composable
-fun HomeScreen() {
-    MainClockScreen()
+fun HomeScreen(
+    onLoggedOut: () -> Unit = {},
+    vm: MainViewModel = viewModel()
+) {
+    val userName by vm.userName.collectAsState()
+    val loggedOut by vm.loggedOut.collectAsState()
+
+    // Reacts to logout and ejects back to PairingScreen
+    LaunchedEffect(loggedOut) {
+        if (loggedOut) {
+            onLoggedOut()
+        }
+    }
+
+    MainClockScreen(
+        userName = userName,
+        onLogout = { vm.logout() }
+    )
 }

@@ -55,7 +55,13 @@ fun SmartPillApp() {
 
         // Rota da Tela Principal (Home)
         composable("home") {
-            HomeScreen() // Vamos criar essa tela agora
+            HomeScreen(
+                onLoggedOut = {
+                    navController.navigate("pairing") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

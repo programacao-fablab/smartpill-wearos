@@ -13,16 +13,18 @@ const val SUPABASE_URL = BuildConfig.SUPABASE_URL
 const val SUPABASE_KEY = BuildConfig.SUPABASE_KEY
 
 
-val supabaseClient = createSupabaseClient(
-    supabaseUrl = SUPABASE_URL,
-    supabaseKey = SUPABASE_KEY
-) {
-    install(Auth)
-    install(Postgrest)
-    install(Functions)
-    install(Realtime)
+val supabaseClient by lazy {
+    createSupabaseClient(
+        supabaseUrl = SUPABASE_URL,
+        supabaseKey = SUPABASE_KEY
+    ) {
+        install(Auth)
+        install(Postgrest)
+        install(Functions)
+        install(Realtime)
 
-    defaultSerializer = KotlinXSerializer(Json {
-        ignoreUnknownKeys = true
-    })
+        defaultSerializer = KotlinXSerializer(Json {
+            ignoreUnknownKeys = true
+        })
+    }
 }
