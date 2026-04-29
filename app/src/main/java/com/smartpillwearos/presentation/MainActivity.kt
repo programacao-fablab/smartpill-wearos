@@ -3,7 +3,7 @@
  * most up to date changes to the libraries and their usages.
  */
 
-package com.example.smartpill_wearos.presentation
+package com.smartpillwearos.presentation
 
 
 import android.os.Bundle
@@ -15,7 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import com.example.smartpill_wearos.presentation.theme.SmartpillwearosTheme
+import com.smartpillwearos.presentation.theme.SmartpillwearosTheme
 import io.github.jan.supabase.gotrue.auth
 
 class MainActivity : ComponentActivity() {

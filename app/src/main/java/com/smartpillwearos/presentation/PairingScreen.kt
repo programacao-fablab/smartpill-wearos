@@ -1,4 +1,4 @@
-package com.example.smartpill_wearos.presentation
+package com.smartpillwearos.presentation
 
 import android.graphics.Bitmap
 import android.util.Log
@@ -30,12 +30,12 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.smartpill_wearos.presentation.utils.DeviceUtils
-import com.example.smartpill_wearos.presentation.utils.QRCodeUtils
+import com.smartpillwearos.presentation.utils.DeviceUtils
+import com.smartpillwearos.presentation.utils.QRCodeUtils
 
 // --- IMPORTS CORRIGIDOS ---
 // Importa a sua variável global do outro arquivo
-import com.example.smartpill_wearos.presentation.supabaseClient
+import com.smartpillwearos.presentation.supabaseClient
 
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.gotrue.auth

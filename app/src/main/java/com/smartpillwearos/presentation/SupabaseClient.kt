@@ -1,4 +1,4 @@
-package com.example.smartpill_wearos.presentation
+package com.smartpillwearos.presentation
 
 import com.smartpillwearos.BuildConfig
 import io.github.jan.supabase.createSupabaseClient

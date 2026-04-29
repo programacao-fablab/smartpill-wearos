@@ -1,4 +1,4 @@
-package com.example.smartpill_wearos.presentation.utils
+package com.smartpillwearos.presentation.utils
 
 import android.graphics.Bitmap
 import android.graphics.Color

@@ -7,19 +7,20 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-val localProperties = Properties() // Sem "java."
+val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile)) // Sem "java."
+    localProperties.load(FileInputStream(localPropertiesFile))
 }
+
 android {
     namespace = "com.smartpillwearos"
-    compileSdk = 36 // Você pode usar a SDK 34 ou 35
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.smartpillwearos"
-        minSdk = 30 // SDK Mínima para Wear OS 3
-        targetSdk = 34 // SDK Alvo
+        minSdk = 30
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
@@ -33,7 +34,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false // Mantenha 'false' durante o desenvolvimento
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -47,7 +48,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10" // Compatível com Kotlin 1.9.22
+        kotlinCompilerExtensionVersion = "1.5.10"
     }
 
     compileOptions {
@@ -83,22 +84,34 @@ dependencies {
     // --- COMUNICAÇÃO ---
     implementation("com.google.android.gms:play-services-wearable:18.2.0")
 
-// --- SUPABASE VERSÃO 2.6.1 (Estável para Kotlin 1.9) ---
+    // --- SUPABASE ---
     val supabaseVersion = "2.6.1"
-    val ktorVersion = "2.3.12" // Versão compatível com Kotlin 1.9
+    val ktorVersion = "2.3.12"
 
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:$supabaseVersion")   // Auth
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:$supabaseVersion") // Banco
-    implementation("io.github.jan-tennert.supabase:realtime-kt:$supabaseVersion")  // Realtime
-    implementation("io.github.jan-tennert.supabase:functions-kt:$supabaseVersion") // Functions
+    implementation("io.github.jan-tennert.supabase:gotrue-kt:$supabaseVersion")
+    implementation("io.github.jan-tennert.supabase:postgrest-kt:$supabaseVersion")
+    implementation("io.github.jan-tennert.supabase:realtime-kt:$supabaseVersion")
+    implementation("io.github.jan-tennert.supabase:functions-kt:$supabaseVersion")
 
     // --- MOTOR DE REDE (KTOR) ---
     implementation("io.ktor:ktor-client-core:$ktorVersion")
     implementation("io.ktor:ktor-client-cio:$ktorVersion")
 
-    // --- SERIALIZAÇÃO (Versão 1.6.3 funciona no Kotlin 1.9) ---
+    // --- SERIALIZAÇÃO ---
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     // --- QR CODE ---
     implementation("com.google.zxing:core:3.5.3")
+
+    // --- TESTING ---
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.compose.ui:ui-test:1.6.8")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
