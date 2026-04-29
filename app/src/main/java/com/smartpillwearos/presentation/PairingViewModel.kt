@@ -7,7 +7,9 @@ import com.smartpillwearos.domain.AuthState
 import com.smartpillwearos.presentation.utils.DeviceUtils
 import com.smartpillwearos.services.SupabaseAuthManager
 import com.smartpillwearos.services.supabaseClient
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class PairingViewModel : ViewModel() {
@@ -16,10 +18,14 @@ class PairingViewModel : ViewModel() {
 
     val authState: StateFlow<AuthState> = manager.state
 
+    private val _deviceId = MutableStateFlow<String?>(null)
+    val deviceId: StateFlow<String?> = _deviceId.asStateFlow()
+
     fun startPairing(context: Context) {
-        val deviceId = DeviceUtils.getDeviceId(context)
+        val id = DeviceUtils.getDeviceId(context)
+        _deviceId.value = id
         viewModelScope.launch {
-            manager.startPairingFlow(deviceId = deviceId)
+            manager.startPairingFlow(deviceId = id)
         }
     }
 

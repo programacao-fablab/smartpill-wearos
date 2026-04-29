@@ -1,5 +1,6 @@
 package com.smartpillwearos.presentation
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ fun PairingScreen(
 ) {
     val context = LocalContext.current
     val authState by vm.authState.collectAsState()
+    val deviceId by vm.deviceId.collectAsState()
 
     // Dispara o fluxo apenas uma vez quando a tela entra no estado Idle
     LaunchedEffect(Unit) {
@@ -70,8 +72,9 @@ fun PairingScreen(
             }
 
             is AuthState.WaitingForMobileScan -> {
-                val qrBitmap = remember(state.qrToken) {
-                    QRCodeUtils.generateQRCode(state.qrToken)
+                val qrContent = deviceId ?: state.qrToken
+                val qrBitmap = remember(qrContent) {
+                    QRCodeUtils.generateQRCode(qrContent)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Escaneie no App", fontSize = 12.sp, color = Color.White)
@@ -83,7 +86,7 @@ fun PairingScreen(
                         )
                     }
                     Text(
-                        text = state.qrToken,
+                        text = qrContent,
                         fontSize = 10.sp,
                         color = MaterialTheme.colors.primary
                     )
@@ -91,6 +94,7 @@ fun PairingScreen(
             }
 
             is AuthState.Success -> {
+                Log.d("SmartPillDebug", "SUCESSO")
                 // LaunchedEffect acima cuida da navegação — UI permanece vazia enquanto transita
                 Box {}
             }
