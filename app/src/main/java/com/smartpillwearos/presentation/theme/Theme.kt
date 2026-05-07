@@ -1,4 +1,4 @@
-package com.example.smartpill_wearos.presentation.theme
+package com.smartpillwearos.presentation.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material.MaterialTheme
