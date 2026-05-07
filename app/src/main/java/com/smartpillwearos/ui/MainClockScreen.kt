@@ -19,10 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +54,8 @@ val DarkText = Color(0xFF333333)
 fun MainClockScreen(
     clock: Clock = Clock.systemDefaultZone(),
     userName: String = "Usuário",
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    agendaViewModel: com.smartpillwearos.presentation.AgendaViewModel = viewModel { com.smartpillwearos.presentation.AgendaViewModel() }
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
     var currentTime by remember { mutableStateOf(LocalTime.now(clock)) }
@@ -74,7 +77,7 @@ fun MainClockScreen(
         ) { page ->
             when (page) {
                 0 -> PageInicio(timeString, userName)
-                1 -> PageMeio()
+                1 -> PageMeio(agendaViewModel)
                 2 -> PageFim(onLogout)
             }
         }
@@ -135,17 +138,23 @@ fun PageInicio(timeString: String, userName: String = "Usuário") {
             fontWeight = FontWeight.ExtraBold
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Próxima Dose: Dipirona",
-            color = Color(0xFFC7A23A), // Darker variant of Vanilla Custard for readability
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
-        )
+//        Text(
+//            text = "Próxima Dose: Dipirona",
+//            color = Color(0xFFC7A23A), // Darker variant of Vanilla Custard for readability
+//            fontSize = 12.sp,
+//            fontWeight = FontWeight.Bold
+//        )
     }
 }
 
 @Composable
-fun PageMeio() {
+fun PageMeio(agendaViewModel: com.smartpillwearos.presentation.AgendaViewModel) {
+    val state by agendaViewModel.state.collectAsState()
+
+    LaunchedEffect(Unit) {
+        agendaViewModel.loadMedicines()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -163,11 +172,38 @@ fun PageMeio() {
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        TimelineItem(time = "08:00", dose = "Vitamina C", isDone = true)
-        Spacer(modifier = Modifier.height(6.dp))
-        TimelineItem(time = "12:30", dose = "Dipirona", isDone = false)
-        Spacer(modifier = Modifier.height(6.dp))
-        TimelineItem(time = "20:00", dose = "Melatonina", isDone = false)
+        when (state) {
+            is com.smartpillwearos.presentation.AgendaState.Loading -> {
+                androidx.wear.compose.material.CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    indicatorColor = Lavender
+                )
+            }
+            is com.smartpillwearos.presentation.AgendaState.Success -> {
+                val medicines = (state as com.smartpillwearos.presentation.AgendaState.Success).medicines
+                if (medicines.isEmpty()) {
+                    Text(
+                        text = "Nenhum medicamento para hoje",
+                        color = DarkText,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    medicines.take(3).forEach { medicine ->
+                        TimelineItem(time = medicine.time, dose = medicine.name, isDone = medicine.isDone)
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+            is com.smartpillwearos.presentation.AgendaState.Error -> {
+                Text(
+                    text = (state as com.smartpillwearos.presentation.AgendaState.Error).message,
+                    color = androidx.compose.ui.graphics.Color.Red,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 

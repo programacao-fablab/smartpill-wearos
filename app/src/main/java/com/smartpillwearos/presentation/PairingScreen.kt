@@ -100,6 +100,7 @@ fun PairingScreen(
             }
 
             is AuthState.Error -> {
+                Log.d("SmartPillDebug", state.message)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = state.message,
